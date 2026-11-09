@@ -100,3 +100,8 @@ function getDatabaseConnection(): \PDO
 
     return $connection;
 }
+
+function getPDO(): \PDO
+{
+    return getDatabaseConnection();
+}
