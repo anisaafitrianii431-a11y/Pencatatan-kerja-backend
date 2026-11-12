@@ -22,10 +22,23 @@ final class Absensi
             a.jam_masuk,
             a.jam_pulang,
             a.status_verifikasi,
+            a.foto_masuk,
+            a.masuk_latitude,
+            a.masuk_longitude,
+            a.masuk_alamat,
+            a.foto_pulang,
+            a.pulang_latitude,
+            a.pulang_longitude,
+            a.pulang_alamat,
+            a.jarak_meter,
+            l.radius_meter,
+            l.latitude AS job_latitude,
+            l.longitude AS job_longitude,
             TIMESTAMPDIFF(MINUTE, CONCAT(a.tanggal, " ", a.jam_masuk), CONCAT(a.tanggal, " ", COALESCE(a.jam_pulang, a.jam_masuk))) AS durasi_menit
         FROM absensi a
         LEFT JOIN karyawan k ON k.id_karyawan = a.id_karyawan
         LEFT JOIN pekerjaan j ON j.id_pekerjaan = a.id_pekerjaan
+        LEFT JOIN lokasi_kerja l ON l.id_pekerjaan = a.id_pekerjaan
         WHERE 1=1';
 
         $params = [];
@@ -73,10 +86,23 @@ final class Absensi
                 a.jam_masuk,
                 a.jam_pulang,
                 a.status_verifikasi,
+                a.foto_masuk,
+                a.masuk_latitude,
+                a.masuk_longitude,
+                a.masuk_alamat,
+                a.foto_pulang,
+                a.pulang_latitude,
+                a.pulang_longitude,
+                a.pulang_alamat,
+                a.jarak_meter,
+                l.radius_meter,
+                l.latitude AS job_latitude,
+                l.longitude AS job_longitude,
                 TIMESTAMPDIFF(MINUTE, CONCAT(a.tanggal, " ", a.jam_masuk), CONCAT(a.tanggal, " ", COALESCE(a.jam_pulang, a.jam_masuk))) AS durasi_menit
             FROM absensi a
             LEFT JOIN karyawan k ON k.id_karyawan = a.id_karyawan
             LEFT JOIN pekerjaan j ON j.id_pekerjaan = a.id_pekerjaan
+            LEFT JOIN lokasi_kerja l ON l.id_pekerjaan = a.id_pekerjaan
             WHERE a.id_absensi = :id_absensi
             LIMIT 1',
         );
@@ -94,6 +120,88 @@ final class Absensi
 
         return $statement->execute([
             'status' => $status,
+            'id_absensi' => $id,
+        ]);
+    }
+
+    public function create(
+        int $karyawanId,
+        int $pekerjaanId,
+        string $tanggal,
+        string $jamMasuk,
+        string $status = 'menunggu',
+        ?float $latitude = null,
+        ?float $longitude = null,
+        ?string $alamat = null,
+        ?string $fotoMasuk = null,
+        ?int $jarakMeter = null
+    ): int {
+        $statement = $this->connection->prepare(
+            'INSERT INTO absensi (
+                id_karyawan,
+                id_pekerjaan,
+                tanggal,
+                jam_masuk,
+                status_verifikasi,
+                masuk_latitude,
+                masuk_longitude,
+                masuk_alamat,
+                foto_masuk,
+                jarak_meter
+             ) VALUES (
+                :id_karyawan,
+                :id_pekerjaan,
+                :tanggal,
+                :jam_masuk,
+                :status,
+                :latitude,
+                :longitude,
+                :alamat,
+                :foto_masuk,
+                :jarak_meter
+             )'
+        );
+
+        $statement->execute([
+            'id_karyawan' => $karyawanId,
+            'id_pekerjaan' => $pekerjaanId,
+            'tanggal' => $tanggal,
+            'jam_masuk' => $jamMasuk,
+            'status' => $status,
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+            'alamat' => $alamat,
+            'foto_masuk' => $fotoMasuk,
+            'jarak_meter' => $jarakMeter,
+        ]);
+
+        return (int) $this->connection->lastInsertId();
+    }
+
+    public function checkout(
+        int $id,
+        string $jamPulang,
+        ?float $latitude = null,
+        ?float $longitude = null,
+        ?string $alamat = null,
+        ?string $fotoPulang = null
+    ): bool {
+        $statement = $this->connection->prepare(
+            'UPDATE absensi
+             SET jam_pulang = :jam_pulang,
+                 pulang_latitude = COALESCE(:latitude, pulang_latitude),
+                 pulang_longitude = COALESCE(:longitude, pulang_longitude),
+                 pulang_alamat = COALESCE(:alamat, pulang_alamat),
+                 foto_pulang = COALESCE(:foto_pulang, foto_pulang)
+             WHERE id_absensi = :id_absensi'
+        );
+
+        return $statement->execute([
+            'jam_pulang' => $jamPulang,
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+            'alamat' => $alamat,
+            'foto_pulang' => $fotoPulang,
             'id_absensi' => $id,
         ]);
     }

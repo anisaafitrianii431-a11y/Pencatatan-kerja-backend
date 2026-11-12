@@ -110,11 +110,11 @@ INSERT INTO penugasan (id_karyawan, id_pekerjaan) VALUES
 (4, 2), (4, 3);
 
 INSERT INTO absensi (id_karyawan, id_pekerjaan, tanggal, jam_masuk, jam_pulang, status_verifikasi) VALUES
-(2, 1, CURDATE(), '08:00:00', '16:30:00', 'disetujui'),
+(2, 1, CURDATE(), '08:00:00', '16:30:00', 'menunggu'),
 (2, 2, CURDATE(), '08:00:00', '17:00:00', 'menunggu'),
-(3, 1, CURDATE(), '07:30:00', '15:30:00', 'disetujui'),
-(4, 2, CURDATE(), '09:00:00', '18:00:00', 'disetujui'),
-(4, 3, DATE_SUB(CURDATE(), INTERVAL 1 DAY), '08:00:00', '16:00:00', 'disetujui');
+(3, 1, CURDATE(), '07:30:00', '15:30:00', 'menunggu'),
+(4, 2, CURDATE(), '09:00:00', '18:00:00', 'menunggu'),
+(4, 3, DATE_SUB(CURDATE(), INTERVAL 1 DAY), '08:00:00', '16:00:00', 'menunggu');
 
 INSERT INTO pengeluaran (id_karyawan, id_pekerjaan, tanggal, nominal, jenis_dana, keterangan, status_verifikasi, status_ganti) VALUES
 (2, 1, CURDATE(), 150000, 'pribadi', 'Beli paku dan semen',     'disetujui', 'belum'),

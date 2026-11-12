@@ -39,6 +39,24 @@ CREATE TABLE IF NOT EXISTS `pekerjaan` (
   DEFAULT CHARACTER SET=utf8mb4
   COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `lokasi_kerja` (
+  `id_lokasi` INT AUTO_INCREMENT PRIMARY KEY,
+  `id_pekerjaan` INT NOT NULL UNIQUE,
+  `nama_lokasi` VARCHAR(150) NULL,
+  `alamat` TEXT NULL,
+  `latitude` DECIMAL(10,8) NOT NULL,
+  `longitude` DECIMAL(11,8) NOT NULL,
+  `radius_meter` INT DEFAULT 100,
+  `foto_lokasi` LONGTEXT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_lokasi_pekerjaan`
+    FOREIGN KEY (`id_pekerjaan`) REFERENCES `pekerjaan` (`id_pekerjaan`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARACTER SET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `penugasan` (
   `id_penugasan` INT AUTO_INCREMENT PRIMARY KEY,
   `id_pekerjaan` INT NOT NULL,
@@ -60,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `absensi` (
   `tanggal` DATE NOT NULL,
   `jam_masuk` TIME NOT NULL,
   `jam_pulang` TIME NULL,
-  `status_verifikasi` ENUM('menunggu','disetujui','ditolak') NOT NULL,
+  `status_verifikasi` ENUM('menunggu','disetujui','ditolak') NOT NULL DEFAULT 'menunggu',
   CONSTRAINT `fk_absensi_pekerjaan`
     FOREIGN KEY (`id_pekerjaan`) REFERENCES `pekerjaan` (`id_pekerjaan`),
   CONSTRAINT `fk_absensi_karyawan`
@@ -78,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `pengeluaran` (
   `jenis_dana` ENUM('kantor','pribadi') NOT NULL,
   `keterangan` VARCHAR(255) NULL,
   `foto_kwitansi` VARCHAR(255) NOT NULL,
-  `status_verifikasi` ENUM('menunggu','disetujui','ditolak') NOT NULL,
+  `status_verifikasi` ENUM('menunggu','disetujui','ditolak') NOT NULL DEFAULT 'menunggu',
   `status_ganti` ENUM('belum','sudah') NOT NULL,
   CONSTRAINT `fk_pengeluaran_pekerjaan`
     FOREIGN KEY (`id_pekerjaan`) REFERENCES `pekerjaan` (`id_pekerjaan`),
@@ -287,11 +305,11 @@ INSERT INTO penugasan (id_pekerjaan, id_karyawan, peran_tugas) VALUES
 
 -- Data Absensi
 INSERT INTO absensi (id_pekerjaan, id_karyawan, tanggal, jam_masuk, jam_pulang, status_verifikasi, catatan) VALUES
-(1, 1, '2026-11-02', '08:00:00', '17:00:00', 'disetujui', 'Pekerjaan crimping kabel lantai 1'),
-(1, 1, '2026-11-03', '08:30:00', '16:30:00', 'disetujui', 'Pemasangan rak server dan switch'),
-(1, 3, '2026-11-02', '08:00:00', '16:00:00', 'disetujui', 'Bantu tarik kabel ducting'),
+(1, 1, '2026-11-02', '08:00:00', '17:00:00', 'menunggu', 'Pekerjaan crimping kabel lantai 1'),
+(1, 1, '2026-11-03', '08:30:00', '16:30:00', 'menunggu', 'Pemasangan rak server dan switch'),
+(1, 3, '2026-11-02', '08:00:00', '16:00:00', 'menunggu', 'Bantu tarik kabel ducting'),
 (1, 3, '2026-11-03', '08:00:00', '17:00:00', 'menunggu', 'Terminasi patch panel'),
-(2, 2, '2026-11-02', '09:00:00', '18:00:00', 'disetujui', 'Audit indexing database'),
+(2, 2, '2026-11-02', '09:00:00', '18:00:00', 'menunggu', 'Audit indexing database'),
 (2, 1, '2026-11-03', '09:00:00', '15:00:00', 'menunggu', 'Cek temperatur data center');
 
 -- Data Pengeluaran (Sesuai contoh use case)

@@ -38,12 +38,12 @@ $routeParameters = [];
 
 if ($route === null) {
     foreach ($routes as $routePattern => $candidateRoute) {
-        if (!str_contains($routePattern, '{id}')) {
+        if (!str_contains($routePattern, '{')) {
             continue;
         }
 
-        $pattern = str_replace(
-            '\{id\}',
+        $pattern = preg_replace(
+            '/\\\{[a-zA-Z0-9_]+\\\}/',
             '([^/]+)',
             preg_quote($routePattern, '#'),
         );

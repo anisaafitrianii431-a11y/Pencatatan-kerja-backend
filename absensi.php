@@ -94,8 +94,25 @@ if ($method === 'GET') {
         ");
         $idPek = $id_pekerjaan > 0 ? $id_pekerjaan : null;
         $stmt->execute([$kId, $idPek, $tanggal, $jam_masuk, $keterangan]);
+        $newAbsId = $pdo->lastInsertId();
 
-        jsonResponse(true, "Absensi masuk berhasil dicatat", ['id_absensi' => $pdo->lastInsertId()]);
+        // Sinkronisasi status pekerjaan & penugasan
+        if ($idPek) {
+            try {
+                $todayStr = date('Y-m-d');
+                $chkPek = $pdo->prepare('SELECT status, tanggal_mulai FROM pekerjaan WHERE id_pekerjaan = ?');
+                $chkPek->execute([$idPek]);
+                $pekRow = $chkPek->fetch();
+                if ($pekRow && $pekRow['status'] === 'belum_mulai') {
+                    if (empty($pekRow['tanggal_mulai']) || $pekRow['tanggal_mulai'] <= $todayStr) {
+                        $pdo->prepare('UPDATE pekerjaan SET status = "berjalan" WHERE id_pekerjaan = ? AND status = "belum_mulai"')->execute([$idPek]);
+                    }
+                }
+                $pdo->prepare('UPDATE penugasan SET status_karyawan = "sedang_bekerja" WHERE id_pekerjaan = ? AND id_karyawan = ? AND status_konfirmasi_admin = 0')->execute([$idPek, $kId]);
+            } catch (\Throwable) {}
+        }
+
+        jsonResponse(true, "Absensi masuk berhasil dicatat", ['id_absensi' => $newAbsId]);
 
     } elseif ($action === 'pulang') {
         // Catat jam pulang
@@ -104,6 +121,14 @@ if ($method === 'GET') {
 
         $stmt = $pdo->prepare("UPDATE absensi SET jam_pulang = ? WHERE id_absensi = ? AND id_karyawan = ?");
         $stmt->execute([$jam_pulang, $id_absensi, $kId]);
+
+        // Sinkronisasi penugasan ke 'selesai_bertugas'
+        try {
+            $absRow = $pdo->query("SELECT id_pekerjaan, id_karyawan FROM absensi WHERE id_absensi = {$id_absensi}")->fetch();
+            if ($absRow && !empty($absRow['id_pekerjaan'])) {
+                $pdo->prepare('UPDATE penugasan SET status_karyawan = "selesai_bertugas" WHERE id_pekerjaan = ? AND id_karyawan = ? AND status_konfirmasi_admin = 0')->execute([$absRow['id_pekerjaan'], $absRow['id_karyawan']]);
+            }
+        } catch (\Throwable) {}
 
         jsonResponse(true, "Jam pulang berhasil dicatat");
 

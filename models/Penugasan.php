@@ -24,6 +24,11 @@ final class Penugasan
                 j.status AS status_pekerjaan,
                 j.metode_penentuan,
                 p.jenis_penugasan,
+                COALESCE(p.status_penugasan, "aktif") AS status_penugasan,
+                p.alasan_batal,
+                p.dibatalkan_pada,
+                p.dibatalkan_oleh,
+                p.status_karyawan,
                 p.tanggal_penugasan
              FROM penugasan p
              INNER JOIN karyawan k ON k.id_karyawan = p.id_karyawan
@@ -50,6 +55,11 @@ final class Penugasan
                 j.status AS status_pekerjaan,
                 j.metode_penentuan,
                 p.jenis_penugasan,
+                COALESCE(p.status_penugasan, "aktif") AS status_penugasan,
+                p.alasan_batal,
+                p.dibatalkan_pada,
+                p.dibatalkan_oleh,
+                p.status_karyawan,
                 p.tanggal_penugasan
              FROM penugasan p
              INNER JOIN karyawan k ON k.id_karyawan = p.id_karyawan
@@ -91,7 +101,8 @@ final class Penugasan
         $sql = 'SELECT 1
                 FROM penugasan
                 WHERE id_karyawan = :id_karyawan
-                  AND id_pekerjaan = :id_pekerjaan';
+                  AND id_pekerjaan = :id_pekerjaan
+                  AND COALESCE(status_penugasan, "aktif") = "aktif"';
         $parameters = [
             'id_karyawan' => $employeeId,
             'id_pekerjaan' => $jobId,
@@ -235,11 +246,22 @@ final class Penugasan
         $pengeluaranCount = (int) $pengeluaranStmt->fetchColumn();
 
         if ($absensiCount > 0 || $pengeluaranCount > 0) {
+            // Jika sudah ada catatan absensi atau pengeluaran, batalkan penugasan tanpa menghapus data historis
+            $cancelStmt = $this->connection->prepare('
+                UPDATE penugasan
+                SET status_penugasan = "dibatalkan",
+                    alasan_batal = "Dibatalkan oleh Admin (catatan absensi & pengeluaran tetap disimpan)",
+                    dibatalkan_pada = NOW(),
+                    dibatalkan_oleh = "admin"
+                WHERE id_penugasan = :id
+            ');
+            $cancelStmt->execute(['id' => $id]);
+
             return [
-                'deleted' => false,
-                'referenced' => true,
+                'deleted' => true,
+                'referenced' => false,
                 'not_found' => false,
-                'message' => "Penugasan tidak dapat dibatalkan karena pekerja sudah memiliki {$absensiCount} catatan absensi dan {$pengeluaranCount} catatan pengeluaran pada pekerjaan ini.",
+                'message' => 'Penugasan telah dialihkan ke status dibatalkan agar seluruh riwayat absensi dan pengeluaran tetap aman.',
             ];
         }
 
